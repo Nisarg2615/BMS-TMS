@@ -599,16 +599,105 @@ a {
   color: var(--text);
 }
 
+.remindersCard {
+  overflow: hidden;
+}
+
+.remindersCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: #4f46e5;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
 .notifItem {
   border: none;
   border-radius: 8px;
   padding: 10px 12px;
   margin-bottom: 8px;
   background: #f8fafc;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.notifItem:last-child {
+  margin-bottom: 0;
 }
 
 .notifUnread {
   background: #eef2ff;
+}
+
+.remindersCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.remindersCardHeader .sidebarCardTitle {
+  margin-bottom: 0;
+}
+
+.remindersMarkAllBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4f46e5;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.remindersMarkAllBtn:hover {
+  text-decoration: underline;
+}
+
+.remindersScroll {
+  max-height: 320px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+.remindersScroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.remindersScroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.notifMarkReadBtn {
+  margin-top: 6px !important;
+  padding: 0 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #4f46e5 !important;
+  text-decoration: none !important;
+  align-self: flex-start;
+  line-height: 1.2;
+  min-height: auto;
+}
+
+.notifMarkReadBtn:hover {
+  text-decoration: underline !important;
+  color: #4338ca !important;
 }
 
 .notifItemTop {
