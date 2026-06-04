@@ -8,6 +8,8 @@ import SignupPage from "./pages/SignupPage";
 import DashboardPage from "./pages/DashboardPage";
 import UsersPage from "./pages/UsersPage";
 import { isTokenSkewError, withTokenSkewRetry } from "./utils/authErrors";
+import { userInitials } from "./utils/avatar";
+import BrandMark from "./components/ui/BrandMark";
 
 function TopBar({
   profile,
@@ -17,12 +19,17 @@ function TopBar({
   onLogout: () => void;
 }) {
   const isAdmin = profile.role === "Admin";
+  const initials = userInitials(profile.name, profile.email);
+
   return (
     <div className="topBar">
-      <div className="brand">
-        BMS <span>TMS</span>
+      <div className="brandRow">
+        <BrandMark />
+        <div className="brand">
+          BMS <span>TMS</span>
+        </div>
       </div>
-      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+      <div className="topBarActions">
         <nav className="navLinks">
           <NavLink to="/" className={({ isActive }) => "navLink" + (isActive ? " navLinkActive" : "")} end>
             Dashboard
@@ -33,10 +40,15 @@ function TopBar({
             </NavLink>
           ) : null}
         </nav>
-        <div className="pill">
-          {profile.name} • {profile.role}
+        <div className="userChip">
+          <div className="userAvatar" title={profile.email}>
+            {initials}
+          </div>
+          <span>
+            {profile.name || profile.email} · {profile.role}
+          </span>
         </div>
-        <button className="btn btnAccent" onClick={onLogout}>
+        <button type="button" className="btnLogout" onClick={onLogout}>
           Logout
         </button>
       </div>
@@ -103,12 +115,8 @@ export default function App() {
 
   if (!firebaseUser || !profile) {
     return (
-      <div className="appShell">
-        {bootError ? (
-          <div className="page" style={{ maxWidth: 520, margin: "0 auto", color: "#b91c1c", fontWeight: 700 }}>
-            {bootError}
-          </div>
-        ) : null}
+      <div className="authPage">
+        {bootError ? <div className="authBootError">{bootError}</div> : null}
         <Routes>
           <Route path="/signup" element={<SignupPage />} />
           <Route path="*" element={<LoginPage />} />

@@ -8,6 +8,7 @@ import TaskDetailModal from "../components/TaskDetailModal";
 import NotificationsPanel from "../components/NotificationsPanel";
 import AdminStatsPanel from "../components/AdminStatsPanel";
 import { filterTasks, isTaskOverdue } from "../utils/taskUtils";
+import { IconCalendar, IconClock, IconCheckCircle, IconAlertCircle } from "../components/ui/StatIcons";
 
 type ViewMode = "board" | "my";
 
@@ -113,55 +114,90 @@ export default function DashboardPage({ profile }: { profile: UserProfile }) {
 
   const boardTasks = viewMode === "my" && !isAdmin ? myTasks : tasks;
 
+  const sidebarSummary = useMemo(() => {
+    const total = tasks.length;
+    const completed = tasks.filter((t) => String(t.status) === "Completed").length;
+    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return {
+      total,
+      activeToday: teacherSummary.dueToday,
+      completionRate,
+    };
+  }, [tasks, teacherSummary.dueToday]);
+
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
         <div>
-          <div className="sectionTitle" style={{ marginTop: 0 }}>
-            {isAdmin ? "All Tasks" : viewMode === "my" ? "My Tasks" : "Tasks"}
-          </div>
-          <div className="muted" style={{ fontSize: 13 }}>
+          <h1 className="pageHeading">{isAdmin ? "All Tasks" : viewMode === "my" ? "My Tasks" : "Tasks"}</h1>
+          <p className="pageSub">
             Drag tasks between columns. Double-click a card for details.
-            {!isAdmin && overdueCount > 0 ? ` • ${overdueCount} overdue` : null}
-          </div>
+            {!isAdmin && overdueCount > 0 ? ` · ${overdueCount} overdue` : null}
+          </p>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {!isAdmin ? (
             <>
-              <button className={"btn" + (viewMode === "board" ? " btnPrimary" : "")} onClick={() => setViewMode("board")}>
+              <button
+                type="button"
+                className={"btn" + (viewMode === "board" ? " btnTabActive" : "")}
+                onClick={() => setViewMode("board")}
+              >
                 All Related
               </button>
-              <button className={"btn" + (viewMode === "my" ? " btnPrimary" : "")} onClick={() => setViewMode("my")}>
+              <button
+                type="button"
+                className={"btn" + (viewMode === "my" ? " btnTabActive" : "")}
+                onClick={() => setViewMode("my")}
+              >
                 My Tasks
               </button>
             </>
           ) : null}
-          <button className="btn btnPrimary" onClick={() => setTaskModalOpen(true)}>
+          <button type="button" className="btnCreate" onClick={() => setTaskModalOpen(true)}>
             + Create
           </button>
         </div>
       </div>
 
-      {!isAdmin ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 12 }}>
-          <div className="metricCard metricBlue">
-            <div className="muted" style={{ fontWeight: 900, fontSize: 12 }}>Due Today</div>
-            <div style={{ fontWeight: 1000, fontSize: 22 }}>{teacherSummary.dueToday}</div>
+      <div className="statsGrid">
+        <div className="statCard">
+          <div className="statIconBox statIconIndigo">
+            <IconCalendar />
           </div>
-          <div className="metricCard metricYellow">
-            <div className="muted" style={{ fontWeight: 900, fontSize: 12 }}>Pending</div>
-            <div style={{ fontWeight: 1000, fontSize: 22 }}>{teacherSummary.pending}</div>
-          </div>
-          <div className="metricCard metricGreen">
-            <div className="muted" style={{ fontWeight: 900, fontSize: 12 }}>Completed</div>
-            <div style={{ fontWeight: 1000, fontSize: 22 }}>{teacherSummary.completed}</div>
-          </div>
-          <div className="metricCard metricRed">
-            <div className="muted" style={{ fontWeight: 900, fontSize: 12 }}>Overdue</div>
-            <div style={{ fontWeight: 1000, fontSize: 22 }}>{teacherSummary.overdue}</div>
+          <div>
+            <p className="statLabel">Due Today</p>
+            <p className="statValue">{teacherSummary.dueToday}</p>
           </div>
         </div>
-      ) : null}
+        <div className="statCard">
+          <div className="statIconBox statIconAmber">
+            <IconClock />
+          </div>
+          <div>
+            <p className="statLabel">Pending</p>
+            <p className="statValue">{teacherSummary.pending}</p>
+          </div>
+        </div>
+        <div className="statCard">
+          <div className="statIconBox statIconGreen">
+            <IconCheckCircle />
+          </div>
+          <div>
+            <p className="statLabel">Completed</p>
+            <p className="statValue">{teacherSummary.completed}</p>
+          </div>
+        </div>
+        <div className="statCard">
+          <div className="statIconBox statIconRed">
+            <IconAlertCircle />
+          </div>
+          <div>
+            <p className="statLabel">Overdue</p>
+            <p className="statValue">{teacherSummary.overdue}</p>
+          </div>
+        </div>
+      </div>
 
       <div className="grid2">
         <div>
@@ -169,23 +205,21 @@ export default function DashboardPage({ profile }: { profile: UserProfile }) {
           {loading ? <div className="muted">Loading tasks...</div> : null}
 
           {!isAdmin && viewMode === "board" ? (
-            <div className="splitGrid">
-              <div className="splitPanel">
-                <div className="splitPanelTitle">Assigned to Me</div>
+            <div className="boardStack">
+              <div className="boardSection">
+                <p className="sectionLabel">Assigned to Me</p>
                 <KanbanBoard
                   tasks={assignedTasks}
                   onMoveTask={moveTask}
                   onOpenTask={(id) => setDetailTaskId(id)}
-                  compact
                 />
               </div>
-              <div className="splitPanel">
-                <div className="splitPanelTitle">Tasks I Created</div>
+              <div className="boardSection">
+                <p className="sectionLabel">Tasks I Created</p>
                 <KanbanBoard
                   tasks={createdTasks}
                   onMoveTask={moveTask}
                   onOpenTask={(id) => setDetailTaskId(id)}
-                  compact
                 />
               </div>
             </div>
@@ -207,7 +241,7 @@ export default function DashboardPage({ profile }: { profile: UserProfile }) {
             />
           ) : null}
           <div style={{ height: 10 }} />
-          <NotificationsPanel />
+          <NotificationsPanel summary={sidebarSummary} />
         </div>
       </div>
 

@@ -5,6 +5,14 @@ import { useDraggable } from "@dnd-kit/core";
 import type { Task } from "../types";
 import { TASK_STATUSES, isTaskOverdue, normalizeStatus } from "../utils/taskUtils";
 
+const STATUS_DOT: Record<string, string> = {
+  Open: "dotOpen",
+  "In Progress": "dotProgress",
+  "On Hold": "dotHold",
+  Review: "dotReview",
+  Completed: "dotDone",
+};
+
 const ColumnDrop = React.memo(function ColumnDrop({
   status,
   children,
@@ -17,7 +25,7 @@ const ColumnDrop = React.memo(function ColumnDrop({
     <div
       className="column"
       ref={setNodeRef}
-      style={isOver ? { outline: "2px solid rgba(59,130,246,0.35)" } : undefined}
+      style={isOver ? { outline: "2px solid rgba(37, 99, 235, 0.35)" } : undefined}
     >
       {children}
     </div>
@@ -132,10 +140,13 @@ export default function KanbanBoard({
           return (
             <ColumnDrop key={s} status={s}>
               <div className="columnHeader">
-                <div className="columnTitle">{s}</div>
+                <div className="columnTitleRow">
+                  <span className={"statusDot " + (STATUS_DOT[s] || "dotOpen")} aria-hidden />
+                  <span className="columnTitle">{s}</span>
+                </div>
                 <div className="countBubble">{colTasks.length}</div>
               </div>
-              {colTasks.length === 0 ? <div className="dropHint">Drop tasks here</div> : null}
+              {colTasks.length === 0 ? <div className="dropHint">Drop here</div> : null}
               {colTasks.map((t) => (
                 <TaskDraggable key={t.id} task={t} onOpen={onOpenTask} />
               ))}
