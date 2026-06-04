@@ -3,8 +3,7 @@ import { closestCorners, DndContext, DragEndEvent, PointerSensor, useSensor, use
 import { useDroppable } from "@dnd-kit/core";
 import { useDraggable } from "@dnd-kit/core";
 import type { Task } from "../types";
-
-const STATUSES: Task["status"][] = ["To Do", "In Progress", "Review", "Completed"];
+import { TASK_STATUSES, isTaskOverdue, normalizeStatus } from "../utils/taskUtils";
 
 const ColumnDrop = React.memo(function ColumnDrop({
   status,
@@ -35,6 +34,7 @@ const TaskDraggable = React.memo(function TaskDraggable({
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
   });
+  const overdue = isTaskOverdue(task);
   const style: React.CSSProperties = {
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     opacity: isDragging ? 0.65 : 1,
@@ -45,10 +45,21 @@ const TaskDraggable = React.memo(function TaskDraggable({
 
   const prio = String(task.priority || "Medium");
   const prioClass = prio === "High" ? "prioHigh" : prio === "Low" ? "prioLow" : "prioMed";
+  const status = normalizeStatus(task.status);
+  const statusClass =
+    status === "Open"
+      ? "stOpen"
+      : status === "In Progress"
+        ? "stProgress"
+        : status === "On Hold"
+          ? "stHold"
+          : status === "Review"
+            ? "stReview"
+            : "stDone";
 
   return (
     <div
-      className="taskCard"
+      className={"taskCard" + (overdue ? " taskCardOverdue" : "")}
       ref={setNodeRef}
       style={style}
       {...attributes}
@@ -58,8 +69,10 @@ const TaskDraggable = React.memo(function TaskDraggable({
       <div className="taskTitle">{task.title}</div>
       <div className="taskMeta">
         <span className={"prio " + prioClass}>{prio}</span>
+        <span className={"statusBadge " + statusClass}>{status}</span>
         <span>{task.department}</span>
         {task.due_date ? <span>Due: {task.due_date.slice(0, 10)}</span> : null}
+        {overdue ? <span className="overdueTag">Overdue</span> : null}
       </div>
       <div className="muted" style={{ marginTop: 8, fontSize: 13, lineHeight: 1.3 }}>
         {task.description ? task.description.slice(0, 90) + (task.description.length > 90 ? "..." : "") : "—"}
@@ -72,22 +85,24 @@ export default function KanbanBoard({
   tasks,
   onMoveTask,
   onOpenTask,
+  compact,
 }: {
   tasks: Task[];
   onMoveTask: (taskId: string, newStatus: string) => Promise<void> | void;
   onOpenTask: (taskId: string) => void;
+  compact?: boolean;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 }, // reduces “jitter” on quick drags
+      activationConstraint: { distance: 6 },
     })
   );
 
   const byStatus = React.useMemo(() => {
     const map = new Map<string, Task[]>();
-    for (const s of STATUSES) map.set(String(s), []);
+    for (const s of TASK_STATUSES) map.set(String(s), []);
     for (const t of tasks) {
-      const s = String(t.status || "To Do");
+      const s = normalizeStatus(t.status);
       if (!map.has(s)) map.set(s, []);
       map.get(s)!.push(t);
     }
@@ -101,19 +116,17 @@ export default function KanbanBoard({
 
     const task = tasks.find((t) => t.id === activeId);
     if (!task) return;
-    const current = String(task.status || "To Do");
+    const current = normalizeStatus(task.status);
     if (current === overId) return;
-    // Do not block drag end on network latency; keep UI instant.
     Promise.resolve(onMoveTask(activeId, overId)).catch((err) => {
-      // UI will revert on error in parent; here we just avoid unhandled promise rejections.
       console.error("Failed to move task:", err);
     });
   }
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-      <div className="kanban">
-        {STATUSES.map((status) => {
+      <div className={compact ? "kanban kanbanCompact" : "kanban"}>
+        {TASK_STATUSES.map((status) => {
           const s = String(status);
           const colTasks = byStatus.get(s) || [];
           return (
@@ -133,4 +146,3 @@ export default function KanbanBoard({
     </DndContext>
   );
 }
-
