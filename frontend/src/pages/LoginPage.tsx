@@ -1,4 +1,7 @@
 import React, { useState } from "react";
+import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
+import Alert from "react-bootstrap/Alert";
 import { useAuth } from "../auth/AuthProvider";
 import BrandMark from "../components/ui/BrandMark";
 import GoogleLogo from "../components/ui/GoogleLogo";
@@ -48,8 +51,8 @@ export default function LoginPage() {
 
   return (
     <div className="authPage">
-      <div className="authCard">
-        <aside className="authBrand">
+      <div className="authCard row g-0">
+        <aside className="authBrand col-md-6">
           <div className="authBrandTop">
             <BrandMark size={36} variant="glass" />
             <div className="authBrandName">
@@ -73,13 +76,13 @@ export default function LoginPage() {
           </div>
         </aside>
 
-        <section className="authFormPanel">
+        <section className="authFormPanel col-md-6">
           <h2 className="authFormTitle">Welcome back</h2>
           <p className="authFormSubtitle">Login using your school email</p>
 
-          <button
-            type="button"
-            className="authGoogleBtn"
+          <Button
+            variant="outline-secondary"
+            className="w-100 d-flex align-items-center justify-content-center gap-2 authGoogleBtn"
             disabled={busy}
             onClick={async () => {
               setBusy(true);
@@ -95,62 +98,58 @@ export default function LoginPage() {
           >
             <GoogleLogo />
             {busy ? "Opening Google..." : "Continue with Google"}
-          </button>
+          </Button>
 
           <div className="authDivider">
             <span>or use email</span>
           </div>
 
-          <div className="authField">
-            <label className="authLabel" htmlFor="login-email">
-              School Email
-            </label>
-            <input
-              id="login-email"
-              className="authInput"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@school.com"
-              autoComplete="email"
-            />
-          </div>
+          <Form>
+            <Form.Group className="mb-3" controlId="login-email">
+              <Form.Label className="authLabel">School Email</Form.Label>
+              <Form.Control
+                className="authInput"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@school.com"
+                autoComplete="email"
+              />
+            </Form.Group>
 
-          <div className="authField">
-            <label className="authLabel" htmlFor="login-password">
-              Password
-            </label>
-            <input
-              id="login-password"
-              className="authInput"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Your password"
-              autoComplete="current-password"
-            />
-          </div>
+            <Form.Group className="mb-3" controlId="login-password">
+              <Form.Label className="authLabel">Password</Form.Label>
+              <Form.Control
+                className="authInput"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Your password"
+                autoComplete="current-password"
+              />
+            </Form.Group>
 
-          {error ? <p className="authError">{error}</p> : null}
+            {error ? <Alert variant="danger" className="py-2 small mb-3">{error}</Alert> : null}
 
-          <button
-            type="button"
-            className="authSubmitBtn"
-            disabled={busy}
-            onClick={async () => {
-              setBusy(true);
-              setError(null);
-              try {
-                await signIn(email.trim(), password);
-              } catch (e: any) {
-                setError(e?.message || "Login failed");
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            {busy ? "Signing in..." : "Login"}
-          </button>
+            <Button
+              variant="primary"
+              className="w-100 mb-3"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setError(null);
+                try {
+                  await signIn(email.trim(), password);
+                } catch (e: any) {
+                  setError(e?.message || "Login failed");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? "Signing in..." : "Login"}
+            </Button>
+          </Form>
 
           <div className="authInfoNote">
             <IconInfo />

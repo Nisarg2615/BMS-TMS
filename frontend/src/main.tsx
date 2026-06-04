@@ -6,6 +6,8 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import App from "./App";
 import SetupPage from "./pages/SetupPage";
 import { firebaseConfigured } from "./firebase";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./bootstrap-theme.css";
 import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

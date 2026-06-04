@@ -23,7 +23,7 @@ const ColumnDrop = React.memo(function ColumnDrop({
   const { setNodeRef, isOver } = useDroppable({ id: status });
   return (
     <div
-      className="column"
+      className="kanbanColumn"
       ref={setNodeRef}
       style={isOver ? { outline: "2px solid rgba(37, 99, 235, 0.35)" } : undefined}
     >

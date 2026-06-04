@@ -820,12 +820,15 @@ def update_task(task_id: str):
         date_key = _utc_date_key()
 
         if status_changed and final_assignee and new_status:
-            _create_notification_if_missing(
+            title = data.get("title", "Task")
+            old_status = _normalize_status(data.get("status"))
+            ts_key = int(_utc_now().timestamp() * 1000)
+            _create_notification(
                 str(final_assignee),
-                f"status-{task_id}-{date_key}-{new_status}",
+                f"status-{task_id}-{ts_key}",
                 task_id,
                 "status_update",
-                f"Task status updated to: {new_status}",
+                f"'{title}' moved from {old_status} to {new_status}",
             )
 
         if assigned_changed and new_assigned_to:

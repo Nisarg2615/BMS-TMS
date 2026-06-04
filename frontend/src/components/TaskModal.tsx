@@ -1,4 +1,10 @@
 import React, { useEffect, useState } from "react";
+import Modal from "react-bootstrap/Modal";
+import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
+import Alert from "react-bootstrap/Alert";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
 import type { Priority, TaskStatus, StaffUser } from "../types";
 import { TASK_STATUSES } from "../utils/taskUtils";
 import { formatUserOption } from "../utils/formatUser";
@@ -49,108 +55,115 @@ export default function TaskModal({
     setBusy(false);
   }, [open, defaultAssignedTo, defaultDepartment]);
 
-  if (!open) return null;
-
   return (
-    <div className="modalOverlay" role="dialog" aria-modal="true">
-      <div className="modal">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <div className="sectionTitle" style={{ margin: 0 }}>
-            Create Task
-          </div>
-          <button className="btn" onClick={onClose}>
-            Close
-          </button>
-        </div>
+    <Modal show={open} onHide={onClose} centered size="lg">
+      <Modal.Header closeButton>
+        <Modal.Title>Create Task</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {error ? <Alert variant="danger" className="py-2 small">{error}</Alert> : null}
 
-        {error ? <div style={{ marginBottom: 10, color: "#b91c1c", fontWeight: 700 }}>{error}</div> : null}
+        <Row className="g-3 mb-3">
+          <Col md={6}>
+            <Form.Group>
+              <Form.Label>Task Title</Form.Label>
+              <Form.Control
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Annual Day Schedule"
+              />
+            </Form.Group>
+          </Col>
+          <Col md={6}>
+            <Form.Group>
+              <Form.Label>Due Date (optional)</Form.Label>
+              <Form.Control type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            </Form.Group>
+          </Col>
+        </Row>
 
-        <div className="fieldRow">
-          <div>
-            <div className="label">Task Title</div>
-            <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Annual Day Schedule" />
-          </div>
-          <div>
-            <div className="label">Due Date (optional)</div>
-            <input className="input" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-          </div>
-        </div>
+        <Form.Group className="mb-3">
+          <Form.Label>Task Details</Form.Label>
+          <Form.Control as="textarea" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+        </Form.Group>
 
-        <div style={{ marginTop: 12 }}>
-          <div className="label">Task Details</div>
-          <textarea className="textarea" value={description} onChange={(e) => setDescription(e.target.value)} />
-        </div>
+        <Row className="g-3 mb-3">
+          <Col md={6}>
+            <Form.Group>
+              <Form.Label>Assigned To</Form.Label>
+              <Form.Select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)}>
+                {users.map((u) => (
+                  <option key={u.uid} value={u.uid}>
+                    {formatUserOption(u)}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+          </Col>
+          <Col md={6}>
+            <Form.Group>
+              <Form.Label>Department</Form.Label>
+              <Form.Control value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="General" />
+            </Form.Group>
+          </Col>
+        </Row>
 
-        <div className="fieldRow" style={{ marginTop: 12 }}>
-          <div>
-            <div className="label">Assigned To</div>
-            <select className="select" value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)}>
-              {users.map((u) => (
-                <option key={u.uid} value={u.uid}>
-                  {formatUserOption(u)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <div className="label">Department</div>
-            <input className="input" value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="General" />
-          </div>
-        </div>
-
-        <div className="fieldRow" style={{ marginTop: 12 }}>
-          <div>
-            <div className="label">Priority</div>
-            <select className="select" value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
-              <option value="Low">Low</option>
-              <option value="Medium">Medium</option>
-              <option value="High">High</option>
-            </select>
-          </div>
-          <div>
-            <div className="label">Initial Status</div>
-            <select className="select" value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)}>
-              {TASK_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          <button className="btn" onClick={onClose} disabled={busy}>
-            Cancel
-          </button>
-          <button
-            className="btn btnPrimary"
-            disabled={busy}
-            onClick={async () => {
-              setBusy(true);
-              setError(null);
-              try {
-                await onCreate({
-                  title: title.trim(),
-                  description: description.trim(),
-                  assigned_to: assignedTo,
-                  department: department.trim() || "General",
-                  priority,
-                  ...(dueDate ? { due_date: dueDate } : {}),
-                  status,
-                });
-                onClose();
-              } catch (e: any) {
-                setError(e?.message || "Failed to create task");
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            {busy ? "Creating..." : "Create"}
-          </button>
-        </div>
-      </div>
-    </div>
+        <Row className="g-3">
+          <Col md={6}>
+            <Form.Group>
+              <Form.Label>Priority</Form.Label>
+              <Form.Select value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </Form.Select>
+            </Form.Group>
+          </Col>
+          <Col md={6}>
+            <Form.Group>
+              <Form.Label>Initial Status</Form.Label>
+              <Form.Select value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)}>
+                {TASK_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+          </Col>
+        </Row>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="outline-secondary" onClick={onClose} disabled={busy}>
+          Cancel
+        </Button>
+        <Button
+          variant="primary"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            setError(null);
+            try {
+              await onCreate({
+                title: title.trim(),
+                description: description.trim(),
+                assigned_to: assignedTo,
+                department: department.trim() || "General",
+                priority,
+                ...(dueDate ? { due_date: dueDate } : {}),
+                status,
+              });
+              onClose();
+            } catch (e: any) {
+              setError(e?.message || "Failed to create task");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {busy ? "Creating..." : "Create"}
+        </Button>
+      </Modal.Footer>
+    </Modal>
   );
 }

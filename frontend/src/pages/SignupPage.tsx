@@ -1,5 +1,11 @@
 import React, { useState } from "react";
+import Card from "react-bootstrap/Card";
+import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
+import Alert from "react-bootstrap/Alert";
+import Container from "react-bootstrap/Container";
 import { useAuth } from "../auth/AuthProvider";
+import BrandMark from "../components/ui/BrandMark";
 
 export default function SignupPage() {
   const { signUp } = useAuth();
@@ -10,63 +16,63 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <div className="page" style={{ maxWidth: 560, margin: "0 auto" }}>
-      <div className="brand" style={{ fontSize: 24, marginBottom: 6 }}>
-        BMS <span>TMS</span>
+    <Container style={{ maxWidth: 560 }}>
+      <div className="d-flex align-items-center gap-2 mb-2">
+        <BrandMark />
+        <span className="fw-bold fs-5">
+          BMS <span className="text-primary">TMS</span>
+        </span>
       </div>
-      <div className="muted" style={{ marginBottom: 16 }}>
-        Create account. We will email a verification link.
-      </div>
+      <p className="text-muted small mb-3">Create account. We will email a verification link.</p>
 
-      <div style={{ border: "1px solid #e2e8f0", borderRadius: 18, padding: 16, background: "#fff" }}>
-        {error ? (
-          <div style={{ marginBottom: 12, color: "#b91c1c", fontWeight: 700 }}>{error}</div>
-        ) : null}
-        {statusMsg ? (
-          <div style={{ marginBottom: 12, color: "#0f766e", fontWeight: 800 }}>{statusMsg}</div>
-        ) : null}
+      <Card className="shadow-none border">
+        <Card.Body>
+          {error ? <Alert variant="danger" className="py-2 small">{error}</Alert> : null}
+          {statusMsg ? <Alert variant="success" className="py-2 small">{statusMsg}</Alert> : null}
 
-        <div style={{ marginBottom: 12 }}>
-          <div className="label">Email</div>
-          <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@school.com" />
-        </div>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Email</Form.Label>
+              <Form.Control value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@school.com" />
+            </Form.Group>
 
-        <div style={{ marginBottom: 12 }}>
-          <div className="label">Password</div>
-          <input
-            className="input"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Create a password"
-          />
-        </div>
+            <Form.Group className="mb-3">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Create a password"
+              />
+            </Form.Group>
 
-        <button
-          className="btn btnPrimary"
-          disabled={busy || !email.trim() || !password.trim()}
-          onClick={async () => {
-            setBusy(true);
-            setError(null);
-            setStatusMsg(null);
-            try {
-              await signUp(email.trim(), password);
-              setStatusMsg("Verification email sent. Please check your inbox and verify.");
-            } catch (e: any) {
-              setError(e?.message || "Signup failed");
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          {busy ? "Creating..." : "Create & Send Verification"}
-        </button>
+            <Button
+              variant="primary"
+              className="w-100"
+              disabled={busy || !email.trim() || !password.trim()}
+              onClick={async () => {
+                setBusy(true);
+                setError(null);
+                setStatusMsg(null);
+                try {
+                  await signUp(email.trim(), password);
+                  setStatusMsg("Verification email sent. Please check your inbox and verify.");
+                } catch (e: any) {
+                  setError(e?.message || "Signup failed");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? "Creating..." : "Create & Send Verification"}
+            </Button>
+          </Form>
 
-        <div className="muted" style={{ marginTop: 12, fontSize: 12 }}>
-          After you click the verification link, log in using your email/password.
-        </div>
-      </div>
-    </div>
+          <p className="text-muted small mt-3 mb-0">
+            After you click the verification link, log in using your email/password.
+          </p>
+        </Card.Body>
+      </Card>
+    </Container>
   );
 }
-

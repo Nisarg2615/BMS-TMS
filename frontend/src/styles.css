@@ -122,6 +122,7 @@ a {
   font-size: var(--font-label);
   font-weight: 500;
   color: var(--text);
+  min-width: 0;
 }
 
 .userAvatar {
@@ -138,70 +139,7 @@ a {
   flex-shrink: 0;
 }
 
-.btnLogout {
-  cursor: pointer;
-  border: none;
-  background: #eef2ff;
-  color: #4f46e5;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: var(--font-label);
-}
-
-.btnLogout:hover {
-  background: #e0e7ff;
-}
-
-/* —— Buttons —— */
-.btn {
-  cursor: pointer;
-  border: 1px solid var(--border);
-  background: #fff;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: var(--font-label);
-  color: var(--text);
-  box-shadow: none;
-}
-
-.btnTabActive {
-  background: #eef2ff;
-  color: #4f46e5;
-  border-color: #c7d2fe;
-}
-
-.btnCreate {
-  background: #4f46e5;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 14px;
-  font-weight: 500;
-  font-size: var(--font-label);
-  cursor: pointer;
-  box-shadow: none;
-}
-
-.btnCreate:hover {
-  background: #4338ca;
-}
-
-.btnPrimary {
-  background: #eef2ff;
-  color: #4f46e5;
-  border-color: #c7d2fe;
-}
-
-.btnAccent,
-.btnDanger {
-  box-shadow: none;
-}
-
-.page {
-  padding: 16px 20px;
-}
+/* Buttons, forms, tables: Bootstrap (react-bootstrap) */
 
 .pageHeading {
   font-size: 18px;
@@ -215,21 +153,95 @@ a {
   margin: 0;
 }
 
+/* —— Dashboard page (reference layout) —— */
+.dashboardPage {
+  width: 100%;
+}
+
+.dashboardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.dashboardHeaderActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tmsTabs {
+  display: flex;
+  gap: 8px;
+}
+
+.tmsTab {
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--indigo);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: var(--font-label);
+}
+
+.tmsTab:hover {
+  background: #f8fafc;
+}
+
+.tmsTabActive {
+  background: var(--indigo);
+  color: #fff;
+  border-color: var(--indigo);
+}
+
+.tmsBtnCreate {
+  cursor: pointer;
+  border: none;
+  background: var(--indigo);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: var(--font-label);
+}
+
+.tmsBtnCreate:hover {
+  background: #4338ca;
+}
+
+/* Board ~75% + sidebar ~25% */
 .grid2 {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: 16px;
   align-items: start;
 }
 
-.grid2 > div:first-child {
+.grid2 > .grid2Main {
   min-width: 0;
 }
 
-@media (max-width: 980px) {
+@media (max-width: 991.98px) {
   .grid2 {
     grid-template-columns: 1fr;
   }
+}
+
+/* Kanban columns — scoped name avoids Bootstrap .col conflicts */
+.kanbanColumn {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 8px;
+  background: #f8fafc;
+  min-height: 380px;
+  min-width: 140px;
+  box-shadow: none;
 }
 
 /* —— Stats bar —— */
@@ -252,9 +264,9 @@ a {
   gap: 12px;
   background: #fff;
   border: 0.5px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 12px 14px;
-  box-shadow: none;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
 .statIconBox {
@@ -329,8 +341,9 @@ a {
 /* —— Kanban —— */
 .kanban {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
+  width: 100%;
 }
 
 .kanbanCompact {
@@ -338,44 +351,23 @@ a {
   overflow-x: auto;
 }
 
-@media (max-width: 1200px) {
-  .kanban {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 980px) {
-  .kanban {
-    grid-template-columns: 1fr;
-  }
-  .boardStack .kanban {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Full-width stacked boards: horizontal scroll on small screens */
-@media (max-width: 1100px) {
+/* Horizontal scroll only on smaller screens — keeps 5 columns on desktop like reference */
+@media (max-width: 900px) {
+  .kanban,
   .boardStack .kanban {
     display: flex;
     overflow-x: auto;
     gap: 10px;
-    padding-bottom: 4px;
+    padding-bottom: 6px;
     scrollbar-width: thin;
   }
-  .boardStack .column {
+  .kanbanColumn {
     flex: 0 0 200px;
     min-width: 200px;
   }
 }
 
-.column {
-  border: none;
-  border-radius: 10px;
-  padding: 10px 8px;
-  background: #f8fafc;
-  min-height: 380px;
-  box-shadow: none;
-}
+/* .kanbanColumn base rules above */
 
 .columnHeader {
   display: flex;
@@ -475,12 +467,18 @@ a {
   font-size: 11px;
 }
 
+.prio,
+.statusBadge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  border: none;
+}
+
 .prio {
-  padding: 2px 6px;
-  border-radius: 4px;
   border: 0.5px solid var(--border);
   background: #fff;
-  font-size: 10px;
 }
 
 .prioHigh {
@@ -513,14 +511,6 @@ a {
   border: 0.5px solid #fecaca;
 }
 
-.statusBadge {
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  border: 0.5px solid var(--border);
-}
-
 .stOpen {
   background: #f1f5f9;
   color: #475569;
@@ -546,10 +536,10 @@ a {
 .sidebarCard {
   background: #fff;
   border: 0.5px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 14px;
+  border-radius: 12px;
+  padding: 14px 16px;
   margin-bottom: 12px;
-  box-shadow: none;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
 .sidebarCardTitle {
@@ -610,17 +600,40 @@ a {
 }
 
 .notifItem {
-  border: 0.5px solid var(--border);
+  border: none;
   border-radius: 8px;
-  padding: 10px;
+  padding: 10px 12px;
   margin-bottom: 8px;
   background: #f8fafc;
-  box-shadow: none;
 }
 
 .notifUnread {
-  border-color: #c7d2fe;
   background: #eef2ff;
+}
+
+.notifItemTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.notifItemLabel {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.notifItemDate {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.notifItemMessage {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #334155;
 }
 
 /* —— Shared —— */
@@ -632,62 +645,6 @@ a {
   font-weight: 600;
   font-size: var(--font-heading);
   margin: 6px 0 12px 0;
-}
-
-.modalOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  z-index: 50;
-}
-
-.modal {
-  width: 720px;
-  max-width: 100%;
-  background: #fff;
-  border-radius: 10px;
-  border: 0.5px solid var(--border);
-  padding: 16px;
-  box-shadow: none;
-}
-
-.fieldRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-@media (max-width: 700px) {
-  .fieldRow {
-    grid-template-columns: 1fr;
-  }
-}
-
-.label {
-  font-weight: 500;
-  font-size: var(--font-label);
-  color: var(--muted);
-  margin-bottom: 6px;
-}
-
-.input,
-.textarea,
-.select {
-  width: 100%;
-  border: 0.5px solid var(--border);
-  border-radius: 6px;
-  padding: 8px 10px;
-  font-size: var(--font-body);
-  outline: none;
-}
-
-.textarea {
-  min-height: 88px;
-  resize: vertical;
 }
 
 .commentBox,
@@ -730,32 +687,6 @@ a {
   background: #fef2f2;
 }
 
-.tableWrap {
-  border: 0.5px solid var(--border);
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: none;
-}
-
-.dataTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--font-label);
-}
-
-.dataTable th,
-.dataTable td {
-  padding: 8px 12px;
-  border-bottom: 0.5px solid var(--border);
-  text-align: left;
-}
-
-.dataTable th {
-  color: var(--muted);
-  font-weight: 500;
-  background: #f8fafc;
-}
-
 .pill {
   padding: 6px 10px;
   border-radius: 999px;
@@ -777,8 +708,6 @@ a {
 }
 
 .authCard {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
   max-width: 640px;
   width: 100%;
   border-radius: 16px;

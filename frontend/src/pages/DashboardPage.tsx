@@ -1,4 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import Button from "react-bootstrap/Button";
+import Alert from "react-bootstrap/Alert";
+import Spinner from "react-bootstrap/Spinner";
 import type { Task, UserProfile, StaffUser } from "../types";
 import { api } from "../api/api";
 import { useAuth } from "../auth/AuthProvider";
@@ -25,8 +28,13 @@ export default function DashboardPage({ profile }: { profile: UserProfile }) {
   const [viewMode, setViewMode] = useState<ViewMode>("board");
   const [createdFrom, setCreatedFrom] = useState("");
   const [createdTo, setCreatedTo] = useState("");
+  const [notifRefreshKey, setNotifRefreshKey] = useState(0);
 
   const isAdmin = profile.role === "Admin";
+
+  function bumpNotifications() {
+    setNotifRefreshKey((k) => k + 1);
+  }
 
   const assignedTasks = useMemo(
     () => filterTasks(tasks, "assigned", profile.uid),
@@ -106,6 +114,7 @@ export default function DashboardPage({ profile }: { profile: UserProfile }) {
     try {
       const token = await getFreshToken();
       await api.updateTask(token, taskId, { status: newStatus });
+      bumpNotifications();
     } catch (e: any) {
       setError(e?.message || "Failed to update task");
       if (beforeSnapshot) setTasks(beforeSnapshot);
@@ -125,84 +134,71 @@ export default function DashboardPage({ profile }: { profile: UserProfile }) {
     };
   }, [tasks, teacherSummary.dueToday]);
 
+  const statCards = [
+    { label: "Due Today", value: teacherSummary.dueToday, icon: <IconCalendar />, boxClass: "statIconIndigo" },
+    { label: "Pending", value: teacherSummary.pending, icon: <IconClock />, boxClass: "statIconAmber" },
+    { label: "Completed", value: teacherSummary.completed, icon: <IconCheckCircle />, boxClass: "statIconGreen" },
+    { label: "Overdue", value: teacherSummary.overdue, icon: <IconAlertCircle />, boxClass: "statIconRed" },
+  ];
+
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+    <div className="dashboardPage">
+      <div className="dashboardHeader">
         <div>
-          <h1 className="pageHeading">{isAdmin ? "All Tasks" : viewMode === "my" ? "My Tasks" : "Tasks"}</h1>
+          <h1 className="pageHeading">
+            {isAdmin ? "All Tasks" : viewMode === "my" ? "My Tasks" : "Tasks"}
+          </h1>
           <p className="pageSub">
             Drag tasks between columns. Double-click a card for details.
             {!isAdmin && overdueCount > 0 ? ` · ${overdueCount} overdue` : null}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className="dashboardHeaderActions">
           {!isAdmin ? (
-            <>
+            <div className="tmsTabs">
               <button
                 type="button"
-                className={"btn" + (viewMode === "board" ? " btnTabActive" : "")}
+                className={"tmsTab" + (viewMode === "board" ? " tmsTabActive" : "")}
                 onClick={() => setViewMode("board")}
               >
                 All Related
               </button>
               <button
                 type="button"
-                className={"btn" + (viewMode === "my" ? " btnTabActive" : "")}
+                className={"tmsTab" + (viewMode === "my" ? " tmsTabActive" : "")}
                 onClick={() => setViewMode("my")}
               >
                 My Tasks
               </button>
-            </>
+            </div>
           ) : null}
-          <button type="button" className="btnCreate" onClick={() => setTaskModalOpen(true)}>
+          <button type="button" className="tmsBtnCreate" onClick={() => setTaskModalOpen(true)}>
             + Create
           </button>
         </div>
       </div>
 
       <div className="statsGrid">
-        <div className="statCard">
-          <div className="statIconBox statIconIndigo">
-            <IconCalendar />
+        {statCards.map((s) => (
+          <div key={s.label} className="statCard">
+            <div className={"statIconBox " + s.boxClass}>{s.icon}</div>
+            <div>
+              <p className="statLabel">{s.label}</p>
+              <p className="statValue">{s.value}</p>
+            </div>
           </div>
-          <div>
-            <p className="statLabel">Due Today</p>
-            <p className="statValue">{teacherSummary.dueToday}</p>
-          </div>
-        </div>
-        <div className="statCard">
-          <div className="statIconBox statIconAmber">
-            <IconClock />
-          </div>
-          <div>
-            <p className="statLabel">Pending</p>
-            <p className="statValue">{teacherSummary.pending}</p>
-          </div>
-        </div>
-        <div className="statCard">
-          <div className="statIconBox statIconGreen">
-            <IconCheckCircle />
-          </div>
-          <div>
-            <p className="statLabel">Completed</p>
-            <p className="statValue">{teacherSummary.completed}</p>
-          </div>
-        </div>
-        <div className="statCard">
-          <div className="statIconBox statIconRed">
-            <IconAlertCircle />
-          </div>
-          <div>
-            <p className="statLabel">Overdue</p>
-            <p className="statValue">{teacherSummary.overdue}</p>
-          </div>
-        </div>
+        ))}
       </div>
 
       <div className="grid2">
-        <div>
-          {error ? <div style={{ color: "#b91c1c", fontWeight: 800, marginBottom: 10 }}>{error}</div> : null}
-          {loading ? <div className="muted">Loading tasks...</div> : null}
+        <div className="grid2Main">
+          {error ? <Alert variant="danger" className="py-2 small mb-2">{error}</Alert> : null}
+          {loading ? (
+            <div className="d-flex align-items-center gap-2 text-muted small mb-2">
+              <Spinner animation="border" size="sm" />
+              Loading tasks...
+            </div>
+          ) : null}
 
           {!isAdmin && viewMode === "board" ? (
             <div className="boardStack">
@@ -228,7 +224,7 @@ export default function DashboardPage({ profile }: { profile: UserProfile }) {
           )}
         </div>
 
-        <div>
+        <aside className="grid2Side">
           {isAdmin ? (
             <AdminStatsPanel
               department={undefined}
@@ -240,9 +236,8 @@ export default function DashboardPage({ profile }: { profile: UserProfile }) {
               }}
             />
           ) : null}
-          <div style={{ height: 10 }} />
-          <NotificationsPanel summary={sidebarSummary} />
-        </div>
+          <NotificationsPanel summary={sidebarSummary} refreshKey={notifRefreshKey} />
+        </aside>
       </div>
 
       <TaskModal
@@ -252,6 +247,7 @@ export default function DashboardPage({ profile }: { profile: UserProfile }) {
           const token = await getFreshToken();
           await api.createTask(token, payload);
           await refreshTasks();
+          bumpNotifications();
         }}
         users={users.length ? users : [{ uid: profile.uid, name: profile.name, email: profile.email, department: profile.department, role: profile.role, active: true }]}
         defaultAssignedTo={profile.uid}
@@ -262,7 +258,10 @@ export default function DashboardPage({ profile }: { profile: UserProfile }) {
         open={!!detailTaskId}
         taskId={detailTaskId}
         onClose={() => setDetailTaskId(null)}
-        onTaskUpdated={refreshTasks}
+        onTaskUpdated={async () => {
+          await refreshTasks();
+          bumpNotifications();
+        }}
         isAdmin={isAdmin}
         users={users.length ? users : [{ uid: profile.uid, name: profile.name, email: profile.email, department: profile.department, role: profile.role, active: true }]}
       />

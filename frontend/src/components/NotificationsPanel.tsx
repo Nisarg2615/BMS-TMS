@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import Alert from "react-bootstrap/Alert";
+import Spinner from "react-bootstrap/Spinner";
 import { useAuth } from "../auth/AuthProvider";
 import { api } from "../api/api";
 import type { NotificationItem } from "../types";
@@ -6,12 +8,15 @@ import { IconBell, IconBarChart } from "./ui/StatIcons";
 
 export default function NotificationsPanel({
   summary,
+  refreshKey = 0,
 }: {
   summary: {
     total: number;
     activeToday: number;
     completionRate: number;
   };
+  /** Increment when tasks change so reminders refetch from the API */
+  refreshKey?: number;
 }) {
   const { getFreshToken } = useAuth();
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -23,8 +28,8 @@ export default function NotificationsPanel({
     return msg.toLowerCase().includes("token used too early");
   }
 
-  async function refresh() {
-    setLoading(true);
+  async function refresh(quiet = false) {
+    if (!quiet) setLoading(true);
     setError(null);
     try {
       const token = await getFreshToken();
@@ -37,13 +42,13 @@ export default function NotificationsPanel({
         setError((e as Error)?.message || "Failed to load notifications");
       }
     } finally {
-      setLoading(false);
+      if (!quiet) setLoading(false);
     }
   }
 
   useEffect(() => {
-    refresh();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    refresh(refreshKey > 0);
+  }, [refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
@@ -52,35 +57,38 @@ export default function NotificationsPanel({
           <IconBell className="sidebarIconIndigo" size={16} />
           <span>Reminders</span>
         </h3>
-        {error ? <div style={{ color: "#dc2626", fontSize: 12, fontWeight: 500 }}>{error}</div> : null}
-        {loading ? <p className="sidebarEmpty">Loading...</p> : null}
-        <div>
-          {items.length === 0 && !loading ? (
-            <p className="sidebarEmpty">No reminders right now.</p>
-          ) : null}
-          {items.map((n) => {
-            const unread = !n.read_at;
-            return (
-              <div
-                key={n.id}
-                className={"notifItem " + (unread ? "notifUnread" : "")}
-                style={{ cursor: unread ? "pointer" : "default" }}
-                onClick={async () => {
-                  if (!unread) return;
-                  const token = await getFreshToken();
-                  await api.markNotificationRead(token, n.id);
-                  await refresh();
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                  <div style={{ fontWeight: 600, fontSize: 12 }}>{unread ? "New" : "Reminder"}</div>
-                  {n.created_at ? <div className="muted" style={{ fontSize: 11 }}>{n.created_at.slice(0, 10)}</div> : null}
-                </div>
-                <div style={{ marginTop: 6, fontSize: 13 }}>{n.message}</div>
+        {error ? <Alert variant="danger" className="py-2 small">{error}</Alert> : null}
+        {loading ? (
+          <div className="d-flex align-items-center gap-2 text-muted small">
+            <Spinner animation="border" size="sm" />
+            Loading...
+          </div>
+        ) : null}
+        {items.length === 0 && !loading ? (
+          <p className="sidebarEmpty">No reminders right now.</p>
+        ) : null}
+        {items.map((n) => {
+          const unread = !n.read_at;
+          return (
+            <div
+              key={n.id}
+              className={"notifItem " + (unread ? "notifUnread" : "")}
+              style={{ cursor: unread ? "pointer" : "default" }}
+              onClick={async () => {
+                if (!unread) return;
+                const token = await getFreshToken();
+                await api.markNotificationRead(token, n.id);
+                await refresh();
+              }}
+            >
+              <div className="notifItemTop">
+                <span className="notifItemLabel">{unread ? "New" : "Reminder"}</span>
+                {n.created_at ? <span className="notifItemDate">{n.created_at.slice(0, 10)}</span> : null}
               </div>
-            );
-          })}
-        </div>
+              <div className="notifItemMessage">{n.message}</div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="sidebarCard">

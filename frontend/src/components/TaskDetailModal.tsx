@@ -1,4 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
+import Modal from "react-bootstrap/Modal";
+import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
+import Alert from "react-bootstrap/Alert";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import Badge from "react-bootstrap/Badge";
 import type { Task, TaskComment, TaskHistoryItem, TaskStatus, StaffUser } from "../types";
 import { api } from "../api/api";
 import { useAuth } from "../auth/AuthProvider";
@@ -72,15 +79,6 @@ export default function TaskDetailModal({
     }
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
-
   const statusOptions: TaskStatus[] = useMemo(() => [...TASK_STATUSES], []);
 
   async function reloadTask() {
@@ -116,204 +114,139 @@ export default function TaskDetailModal({
     await reloadTask();
   }
 
-  if (!open || !taskId) return null;
-
   const overdue = task ? isTaskOverdue(task) : false;
 
   return (
-    <div
-      className="modalOverlay"
-      role="dialog"
-      aria-modal="true"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="modal" style={{ width: "min(860px, calc(100vw - 24px))", maxHeight: "calc(100vh - 80px)", overflowY: "auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <div>
-            <div className="sectionTitle" style={{ margin: 0 }}>
-              Task Detail
-            </div>
-            <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-              Press Esc or click outside to close.
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            {task && String(task.status) !== "Completed" ? (
-              <button
-                className="btn btnPrimary"
-                disabled={busyClose}
-                onClick={async () => {
-                  setBusyClose(true);
-                  try {
-                    await updateStatus("Completed");
-                  } finally {
-                    setBusyClose(false);
-                  }
-                }}
-              >
-                {busyClose ? "Closing..." : "Close Task"}
-              </button>
-            ) : null}
-            {isAdmin ? (
-              <button
-                className="btn btnDanger"
-                disabled={busyDelete || !task}
-                onClick={async () => {
-                  if (!task) return;
-                  if (!window.confirm("Delete this task? This cannot be undone.")) return;
-                  setBusyDelete(true);
-                  setDeleteError(null);
-                  try {
-                    const token = await getFreshToken();
-                    await api.deleteTask(token, task.id);
-                    await onTaskUpdated();
-                    onClose();
-                  } catch (e: any) {
-                    setDeleteError(e?.message || "Failed to delete task");
-                  } finally {
-                    setBusyDelete(false);
-                  }
-                }}
-              >
-                {busyDelete ? "Deleting..." : "Delete"}
-              </button>
-            ) : null}
-            <button className="btn" onClick={onClose}>
-              Back
-            </button>
-          </div>
+    <Modal show={open && !!taskId} onHide={onClose} size="lg" centered scrollable>
+      <Modal.Header closeButton>
+        <div>
+          <Modal.Title>Task Detail</Modal.Title>
+          <div className="text-muted small">Press Esc or click outside to close.</div>
         </div>
-
-        {error ? <div style={{ marginBottom: 10, color: "#b91c1c", fontWeight: 700 }}>{error}</div> : null}
-        {loading ? <div className="muted">Loading...</div> : null}
-        {deleteError ? <div style={{ marginBottom: 10, color: "#b91c1c", fontWeight: 700 }}>{deleteError}</div> : null}
+      </Modal.Header>
+      <Modal.Body>
+        {error ? <Alert variant="danger" className="py-2 small">{error}</Alert> : null}
+        {loading ? <div className="text-muted">Loading...</div> : null}
+        {deleteError ? <Alert variant="danger" className="py-2 small">{deleteError}</Alert> : null}
 
         {task ? (
           <>
             <div className={"detailHeader" + (overdue ? " detailHeaderOverdue" : "")}>
-              <div className="fieldRow" style={{ marginBottom: 0 }}>
-                <div>
-                  <div className="label">Title</div>
-                  <div style={{ fontWeight: 900 }}>{task.title}</div>
-                </div>
-                <div>
-                  <div className="label">Due</div>
-                  <div style={{ fontWeight: 800 }}>{task.due_date ? task.due_date.slice(0, 10) : "—"}</div>
-                  {overdue ? <div className="overdueTag">Overdue</div> : null}
-                </div>
-              </div>
+              <Row className="g-3">
+                <Col md={8}>
+                  <Form.Label className="text-muted small mb-1">Title</Form.Label>
+                  <div className="fw-bold">{task.title}</div>
+                </Col>
+                <Col md={4}>
+                  <Form.Label className="text-muted small mb-1">Due</Form.Label>
+                  <div className="fw-semibold">{task.due_date ? task.due_date.slice(0, 10) : "—"}</div>
+                  {overdue ? <Badge bg="danger" className="mt-1">Overdue</Badge> : null}
+                </Col>
+              </Row>
             </div>
 
-            <div className="label">Description</div>
-            <div className="muted" style={{ lineHeight: 1.5, marginBottom: 10 }}>
-              {task.description || "—"}
-            </div>
+            <Form.Label className="text-muted small">Description</Form.Label>
+            <p className="text-muted small lh-base">{task.description || "—"}</p>
 
-            <div className="fieldRow" style={{ marginBottom: 10 }}>
-              <div>
-                <div className="label">Status</div>
-                <select
-                  className="select"
-                  value={String(task.status)}
-                  onChange={(e) => updateStatus(e.target.value as TaskStatus)}
-                >
-                  {statusOptions.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <div className="label">Department</div>
-                <div style={{ fontWeight: 800 }}>{task.department}</div>
-              </div>
-            </div>
+            <Row className="g-3 mb-3">
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Status</Form.Label>
+                  <Form.Select value={String(task.status)} onChange={(e) => updateStatus(e.target.value as TaskStatus)}>
+                    {statusOptions.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Label className="text-muted small">Department</Form.Label>
+                <div className="fw-semibold">{task.department}</div>
+              </Col>
+            </Row>
 
-            <div className="fieldRow" style={{ marginBottom: 10 }}>
-              <div>
-                <div className="label">Reassign To</div>
-                <select
-                  className="select"
-                  value={String(task.assigned_to || "")}
-                  onChange={(e) => updateAssignment(e.target.value)}
-                >
-                  {users.map((u) => (
-                    <option key={u.uid} value={u.uid}>
-                      {formatUserOption(u)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <div className="label">Update Due Date</div>
-                <input
-                  className="input"
-                  type="date"
-                  value={task.due_date ? task.due_date.slice(0, 10) : ""}
-                  onChange={(e) => updateDueDate(e.target.value)}
-                />
-              </div>
-            </div>
+            <Row className="g-3 mb-3">
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Reassign To</Form.Label>
+                  <Form.Select value={String(task.assigned_to || "")} onChange={(e) => updateAssignment(e.target.value)}>
+                    {users.map((u) => (
+                      <option key={u.uid} value={u.uid}>
+                        {formatUserOption(u)}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Update Due Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={task.due_date ? task.due_date.slice(0, 10) : ""}
+                    onChange={(e) => updateDueDate(e.target.value)}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
 
-            <div className="sectionTitle">Comments</div>
+            <h6 className="fw-semibold mb-2">Comments</h6>
             <div className="commentBox">
-              {comments.length === 0 ? <div className="muted">No comments yet.</div> : null}
+              {comments.length === 0 ? <div className="text-muted small">No comments yet.</div> : null}
               {comments.map((c) => (
                 <div key={c.id} className="comment">
-                  <div style={{ fontWeight: 900, fontSize: 13 }}>{c.author_name || c.author_uid}</div>
+                  <div className="fw-semibold small">{c.author_name || c.author_uid}</div>
                   <div className="commentMsg">{c.message}</div>
-                  {c.at ? <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>{c.at.slice(0, 19).replace("T", " ")}</div> : null}
+                  {c.at ? <div className="text-muted small mt-1">{c.at.slice(0, 19).replace("T", " ")}</div> : null}
                 </div>
               ))}
 
-              <div style={{ marginTop: 12 }}>
-                <div className="label">Add a comment</div>
-                <textarea className="textarea" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} />
-                <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
-                  <button
-                    className="btn btnPrimary"
-                    disabled={busyComment || !newMessage.trim()}
-                    onClick={async () => {
-                      setBusyComment(true);
-                      try {
-                        const token = await getFreshToken();
-                        await api.addComment(token, task.id, newMessage.trim());
-                        setNewMessage("");
-                        await onTaskUpdated();
-                        await reloadTask();
-                      } finally {
-                        setBusyComment(false);
-                      }
-                    }}
-                  >
-                    {busyComment ? "Posting..." : "Post"}
-                  </button>
-                </div>
+              <Form.Group className="mt-3">
+                <Form.Label>Add a comment</Form.Label>
+                <Form.Control as="textarea" rows={2} value={newMessage} onChange={(e) => setNewMessage(e.target.value)} />
+              </Form.Group>
+              <div className="d-flex justify-content-end mt-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled={busyComment || !newMessage.trim()}
+                  onClick={async () => {
+                    setBusyComment(true);
+                    try {
+                      const token = await getFreshToken();
+                      await api.addComment(token, task.id, newMessage.trim());
+                      setNewMessage("");
+                      await onTaskUpdated();
+                      await reloadTask();
+                    } finally {
+                      setBusyComment(false);
+                    }
+                  }}
+                >
+                  {busyComment ? "Posting..." : "Post"}
+                </Button>
               </div>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div className="sectionTitle" style={{ marginBottom: 0 }}>
-                Activity History
-              </div>
-              <button className="btn" onClick={() => setHistoryOpen((v) => !v)}>
+            <div className="d-flex justify-content-between align-items-center mt-3 mb-2">
+              <h6 className="fw-semibold mb-0">Activity History</h6>
+              <Button variant="outline-secondary" size="sm" onClick={() => setHistoryOpen((v) => !v)}>
                 {historyOpen ? "Collapse" : "Expand"}
-              </button>
+              </Button>
             </div>
             {historyOpen ? (
-              <div style={{ maxHeight: 240, overflow: "auto", paddingRight: 4 }}>
-                {history.length === 0 ? <div className="muted">No history yet.</div> : null}
+              <div style={{ maxHeight: 240, overflow: "auto" }}>
+                {history.length === 0 ? <div className="text-muted small">No history yet.</div> : null}
                 {history
                   .slice()
                   .reverse()
                   .map((h) => (
                     <div key={h.id} className="historyItem">
-                      <div style={{ fontWeight: 900 }}>{h.action}</div>
-                      <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
-                        {h.at ? h.at.slice(0, 19).replace("T", " ") : "—"} • {h.actor_name || h.actor_uid}
+                      <div className="fw-semibold small">{h.action}</div>
+                      <div className="text-muted small mt-1">
+                        {h.at ? h.at.slice(0, 19).replace("T", " ") : "—"} · {h.actor_name || h.actor_uid}
                       </div>
                     </div>
                   ))}
@@ -321,7 +254,52 @@ export default function TaskDetailModal({
             ) : null}
           </>
         ) : null}
-      </div>
-    </div>
+      </Modal.Body>
+      <Modal.Footer>
+        {task && String(task.status) !== "Completed" ? (
+          <Button
+            variant="primary"
+            disabled={busyClose}
+            onClick={async () => {
+              setBusyClose(true);
+              try {
+                await updateStatus("Completed");
+              } finally {
+                setBusyClose(false);
+              }
+            }}
+          >
+            {busyClose ? "Closing..." : "Close Task"}
+          </Button>
+        ) : null}
+        {isAdmin ? (
+          <Button
+            variant="danger"
+            disabled={busyDelete || !task}
+            onClick={async () => {
+              if (!task) return;
+              if (!window.confirm("Delete this task? This cannot be undone.")) return;
+              setBusyDelete(true);
+              setDeleteError(null);
+              try {
+                const token = await getFreshToken();
+                await api.deleteTask(token, task.id);
+                await onTaskUpdated();
+                onClose();
+              } catch (e: any) {
+                setDeleteError(e?.message || "Failed to delete task");
+              } finally {
+                setBusyDelete(false);
+              }
+            }}
+          >
+            {busyDelete ? "Deleting..." : "Delete"}
+          </Button>
+        ) : null}
+        <Button variant="outline-secondary" onClick={onClose}>
+          Back
+        </Button>
+      </Modal.Footer>
+    </Modal>
   );
 }

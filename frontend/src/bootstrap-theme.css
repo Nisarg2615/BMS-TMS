@@ -1,0 +1,157 @@
+/* BMS TMS — Bootstrap theme overrides (load after bootstrap.min.css) */
+:root {
+  --bs-primary: #4f46e5;
+  --bs-primary-rgb: 79, 70, 229;
+  --bs-link-color: #4f46e5;
+  --bs-link-hover-color: #4338ca;
+  --bs-body-bg: #f1f5f9;
+  --bs-border-color: #e2e8f0;
+  --bs-font-size-base: 0.875rem;
+}
+
+.btn-primary {
+  --bs-btn-bg: #4f46e5;
+  --bs-btn-border-color: #4f46e5;
+  --bs-btn-hover-bg: #4338ca;
+  --bs-btn-hover-border-color: #4338ca;
+  --bs-btn-active-bg: #3730a3;
+  --bs-btn-active-border-color: #3730a3;
+}
+
+.navbar-tms {
+  border-bottom: 0.5px solid var(--bs-border-color);
+  background: #fff !important;
+  box-shadow: none;
+}
+
+.navbar-tms .navbar-brand span {
+  color: #4f46e5;
+}
+
+.nav-link-tms {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  color: #64748b;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  text-decoration: none;
+}
+
+.nav-link-tms:hover {
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+.nav-link-tms.active {
+  color: #4f46e5 !important;
+  font-weight: 600;
+  background: #eef2ff;
+}
+
+/* Mobile: stack nav links, user info, and logout vertically */
+@media (max-width: 767.98px) {
+  .navbar-tms .navbar-collapse {
+    flex-basis: 100%;
+    flex-grow: 1;
+    align-items: stretch;
+    margin-top: 0.25rem;
+  }
+
+  .tms-navbar-menu {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    width: 100%;
+    padding-bottom: 0.5rem;
+  }
+
+  .tms-navbar-links {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100%;
+    gap: 0.35rem !important;
+    margin: 0 !important;
+  }
+
+  .navbar-tms .nav-link-tms {
+    display: block;
+    width: 100%;
+    text-align: left;
+  }
+
+  .tms-navbar-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    width: 100%;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .tms-navbar-footer .userChip {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .userChipText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+    font-size: 0.8125rem;
+  }
+
+  .tms-logout-btn {
+    width: 100%;
+  }
+}
+
+/* Desktop: horizontal row aligned to the right */
+@media (min-width: 768px) {
+  .tms-navbar-menu {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    width: 100%;
+    margin-left: auto;
+  }
+
+  .tms-navbar-links {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+  }
+
+  .tms-navbar-footer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .userChipText {
+    font-size: 0.8125rem;
+    white-space: nowrap;
+  }
+}
+
+/* Dashboard: don’t let Bootstrap shrink the kanban area */
+.grid2Main {
+  min-width: 0;
+}
+
+.dashboardPage .pageHeading {
+  font-size: 18px;
+}
+
+.dashboardPage .btn,
+.dashboardPage .form-control {
+  font-size: 14px;
+}

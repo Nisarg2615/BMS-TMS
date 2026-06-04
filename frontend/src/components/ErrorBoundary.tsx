@@ -1,4 +1,8 @@
 import React from "react";
+import Container from "react-bootstrap/Container";
+import Card from "react-bootstrap/Card";
+import Alert from "react-bootstrap/Alert";
+import BrandMark from "./ui/BrandMark";
 
 type Props = { children: React.ReactNode };
 type State = { error: Error | null };
@@ -13,32 +17,26 @@ export class ErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.error) {
       return (
-        <div className="appShell">
-          <div className="page" style={{ maxWidth: 640, margin: "0 auto" }}>
-            <div className="brand" style={{ fontSize: 24, marginBottom: 6 }}>
-              BMS <span>TMS</span>
+        <div className="appShell min-vh-100 py-4">
+          <Container style={{ maxWidth: 640 }}>
+            <div className="d-flex align-items-center gap-2 mb-2">
+              <BrandMark />
+              <span className="fw-bold fs-5">
+                BMS <span className="text-primary">TMS</span>
+              </span>
             </div>
-            <div style={{ border: "1px solid #fecaca", borderRadius: 18, padding: 16, background: "#fff" }}>
-              <div style={{ fontWeight: 700, marginBottom: 8, color: "#b91c1c" }}>Something went wrong</div>
-              <div className="muted" style={{ marginBottom: 12 }}>
-                The app hit a runtime error while loading.
-              </div>
-              <pre
-                style={{
-                  margin: 0,
-                  padding: 12,
-                  borderRadius: 10,
-                  background: "#fef2f2",
-                  border: "1px solid #fecaca",
-                  fontSize: 13,
-                  overflowX: "auto",
-                  whiteSpace: "pre-wrap",
-                }}
-              >
-                {this.state.error.message}
-              </pre>
-            </div>
-          </div>
+            <Card className="shadow-none border">
+              <Card.Body>
+                <Alert variant="danger" className="py-2">
+                  <strong>Something went wrong</strong>
+                  <div className="small mt-1">The app hit a runtime error while loading.</div>
+                </Alert>
+                <pre className="bg-danger-subtle border border-danger-subtle rounded p-3 small mb-0 overflow-auto text-danger">
+                  {this.state.error.message}
+                </pre>
+              </Card.Body>
+            </Card>
+          </Container>
         </div>
       );
     }

@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Routes, Route, useNavigate, NavLink } from "react-router-dom";
+import Container from "react-bootstrap/Container";
+import Navbar from "react-bootstrap/Navbar";
+import Nav from "react-bootstrap/Nav";
+import Button from "react-bootstrap/Button";
+import Spinner from "react-bootstrap/Spinner";
+import Alert from "react-bootstrap/Alert";
 import { useAuth } from "./auth/AuthProvider";
 import { api } from "./api/api";
 import type { UserProfile } from "./types";
@@ -22,37 +28,51 @@ function TopBar({
   const initials = userInitials(profile.name, profile.email);
 
   return (
-    <div className="topBar">
-      <div className="brandRow">
-        <BrandMark />
-        <div className="brand">
-          BMS <span>TMS</span>
-        </div>
-      </div>
-      <div className="topBarActions">
-        <nav className="navLinks">
-          <NavLink to="/" className={({ isActive }) => "navLink" + (isActive ? " navLinkActive" : "")} end>
-            Dashboard
-          </NavLink>
-          {isAdmin ? (
-            <NavLink to="/users" className={({ isActive }) => "navLink" + (isActive ? " navLinkActive" : "")}>
-              Employees
-            </NavLink>
-          ) : null}
-        </nav>
-        <div className="userChip">
-          <div className="userAvatar" title={profile.email}>
-            {initials}
-          </div>
-          <span>
-            {profile.name || profile.email} · {profile.role}
+    <Navbar expand="md" className="navbar-tms py-2">
+      <Container fluid className="px-3">
+        <Navbar.Brand className="d-flex align-items-center gap-2 mb-0">
+          <BrandMark />
+          <span className="fw-bold text-dark">
+            BMS <span className="text-primary">TMS</span>
           </span>
-        </div>
-        <button type="button" className="btnLogout" onClick={onLogout}>
-          Logout
-        </button>
-      </div>
-    </div>
+        </Navbar.Brand>
+        <Navbar.Toggle aria-controls="tms-nav" aria-label="Toggle navigation" />
+        <Navbar.Collapse id="tms-nav">
+          <div className="tms-navbar-menu">
+            <Nav className="tms-navbar-links">
+              <NavLink
+                to="/"
+                className={({ isActive }) => "nav-link nav-link-tms" + (isActive ? " active" : "")}
+                end
+              >
+                Dashboard
+              </NavLink>
+              {isAdmin ? (
+                <NavLink
+                  to="/users"
+                  className={({ isActive }) => "nav-link nav-link-tms" + (isActive ? " active" : "")}
+                >
+                  Employees
+                </NavLink>
+              ) : null}
+            </Nav>
+            <div className="tms-navbar-footer">
+              <div className="userChip">
+                <div className="userAvatar" title={profile.email}>
+                  {initials}
+                </div>
+                <span className="userChipText">
+                  {profile.name || profile.email} · {profile.role}
+                </span>
+              </div>
+              <Button variant="outline-primary" size="sm" className="tms-logout-btn" onClick={onLogout}>
+                Logout
+              </Button>
+            </div>
+          </div>
+        </Navbar.Collapse>
+      </Container>
+    </Navbar>
   );
 }
 
@@ -107,8 +127,10 @@ export default function App() {
 
   if (loading || booting) {
     return (
-      <div className="appShell">
-        <div className="page">Loading...</div>
+      <div className="appShell d-flex align-items-center justify-content-center min-vh-100">
+        <Spinner animation="border" variant="primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </Spinner>
       </div>
     );
   }
@@ -116,7 +138,7 @@ export default function App() {
   if (!firebaseUser || !profile) {
     return (
       <div className="authPage">
-        {bootError ? <div className="authBootError">{bootError}</div> : null}
+        {bootError ? <Alert variant="danger" className="authBootError mb-3">{bootError}</Alert> : null}
         <Routes>
           <Route path="/signup" element={<SignupPage />} />
           <Route path="*" element={<LoginPage />} />
@@ -128,13 +150,13 @@ export default function App() {
   return (
     <div className="appShell">
       <TopBar profile={profile} onLogout={() => logout().then(() => navigate("/"))} />
-      <div className="page">
+      <Container fluid className="py-3 px-3">
         <Routes>
           <Route path="/" element={<DashboardPage profile={profile} />} />
           <Route path="/users" element={<UsersPage profile={profile} />} />
           <Route path="*" element={<DashboardPage profile={profile} />} />
         </Routes>
-      </div>
+      </Container>
     </div>
   );
 }
