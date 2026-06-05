@@ -11,4 +11,6 @@
 **/venv/
 **/.idea/
 **/.vscode/
+**/firebase-service-account.json
+**/firebase-key.json
 
