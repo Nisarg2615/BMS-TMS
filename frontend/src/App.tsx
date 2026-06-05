@@ -86,13 +86,9 @@ export default function App() {
   useEffect(() => {
     if (!firebaseUser) {
       setProfile(null);
-      setBootError(null);
       setBooting(false);
       return;
     }
-
-    let active = true;
-    const uid = firebaseUser.uid;
 
     (async () => {
       setBooting(true);
@@ -102,9 +98,10 @@ export default function App() {
           const token = await getFreshToken();
           return api.getMe(token);
         });
-        if (active) setProfile(p);
+        setProfile(p);
+        setBootError(null);
+        navigate("/", { replace: true });
       } catch (e: any) {
-        if (!active) return;
         const msg = e?.message || "Failed to load profile";
         setProfile(null);
         if (!isTokenSkewError(e)) {
@@ -118,13 +115,9 @@ export default function App() {
           await logout();
         }
       } finally {
-        if (active) setBooting(false);
+        setBooting(false);
       }
     })();
-
-    return () => {
-      active = false;
-    };
   }, [firebaseUser?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading || booting) {
@@ -138,12 +131,26 @@ export default function App() {
   }
 
   if (!firebaseUser || !profile) {
+    if (firebaseUser && !profile && !bootError) {
+      return (
+        <div className="appShell d-flex flex-column align-items-center justify-content-center min-vh-100 gap-2">
+          <Spinner animation="border" variant="primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </Spinner>
+          <p className="text-muted small mb-0">Completing sign-in...</p>
+        </div>
+      );
+    }
+
     return (
       <div className="authPage">
         {bootError ? <Alert variant="danger" className="authBootError mb-3">{bootError}</Alert> : null}
         <Routes>
           <Route path="/signup" element={<SignupPage />} />
-          <Route path="*" element={<LoginPage />} />
+          <Route
+            path="*"
+            element={<LoginPage onAttemptLogin={() => setBootError(null)} />}
+          />
         </Routes>
       </div>
     );

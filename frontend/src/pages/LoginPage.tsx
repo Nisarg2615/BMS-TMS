@@ -42,7 +42,7 @@ const FEATURES = [
   { icon: <IconUsers />, label: "Role-based access" },
 ];
 
-export default function LoginPage() {
+export default function LoginPage({ onAttemptLogin }: { onAttemptLogin?: () => void }) {
   const { signIn, signInWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -88,6 +88,7 @@ export default function LoginPage() {
             onClick={async () => {
               setBusy(true);
               setError(null);
+              onAttemptLogin?.();
               try {
                 await signInWithGoogle();
               } catch (e: any) {
@@ -140,6 +141,7 @@ export default function LoginPage() {
               onClick={async () => {
                 setBusy(true);
                 setError(null);
+                onAttemptLogin?.();
                 try {
                   await signIn(email.trim(), password);
                 } catch (e: any) {

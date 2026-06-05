@@ -38,10 +38,20 @@ export async function apiFetch<T>(
   });
 
   const text = await res.text();
-  const json = text ? JSON.parse(text) : null;
+  let json: any = null;
+  if (text) {
+    try {
+      json = JSON.parse(text);
+    } catch {
+      throw new Error(`Invalid server response (${res.status})`);
+    }
+  }
   if (!res.ok) {
     const err = json?.error || json?.message || text || `Request failed (${res.status})`;
     throw new Error(err);
+  }
+  if (json === null) {
+    throw new Error(`Empty server response (${res.status})`);
   }
   return json as T;
 }

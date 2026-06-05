@@ -103,9 +103,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await signOut(auth);
       },
       getFreshToken: async () => {
-        if (!auth?.currentUser) throw new Error("Not authenticated");
-        await sleep(200);
-        return auth.currentUser.getIdToken(true);
+        for (let attempt = 0; attempt < 8; attempt++) {
+          if (auth?.currentUser) {
+            return auth.currentUser.getIdToken(true);
+          }
+          await sleep(250);
+        }
+        throw new Error("Not authenticated");
       },
     }),
     [firebaseUser, idToken, loading]
