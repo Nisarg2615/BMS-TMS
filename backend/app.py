@@ -179,7 +179,15 @@ def _dt_to_iso(dt: Optional[datetime]) -> Optional[str]:
 
 def create_app() -> Flask:
     app = Flask(__name__)
-    CORS(app, origins=["https://bms-tms.vercel.app"])
+    cors_origins = [
+        origin.strip()
+        for origin in os.getenv(
+            "CORS_ALLOWED_ORIGINS",
+            "https://bms-tms.vercel.app,http://localhost:5173,http://127.0.0.1:5173",
+        ).split(",")
+        if origin.strip()
+    ]
+    CORS(app, origins=cors_origins)
 
     # -------- Firebase Admin init --------
     # One of these env vars should be configured:

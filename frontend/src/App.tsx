@@ -84,14 +84,17 @@ export default function App() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    let cancelled = false;
-    async function boot() {
-      if (!firebaseUser) {
-        setProfile(null);
-        setBootError(null);
-        setBooting(false);
-        return;
-      }
+    if (!firebaseUser) {
+      setProfile(null);
+      setBootError(null);
+      setBooting(false);
+      return;
+    }
+
+    let active = true;
+    const uid = firebaseUser.uid;
+
+    (async () => {
       setBooting(true);
       setBootError(null);
       try {
@@ -99,31 +102,30 @@ export default function App() {
           const token = await getFreshToken();
           return api.getMe(token);
         });
-        if (!cancelled) setProfile(p);
+        if (active) setProfile(p);
       } catch (e: any) {
+        if (!active) return;
         const msg = e?.message || "Failed to load profile";
-        if (!cancelled) {
-          setProfile(null);
-          if (!isTokenSkewError(e)) {
-            setBootError(msg);
-          } else {
-            setBootError(
-              "Sign-in is syncing. Wait a moment and try again, or sync your PC clock (Settings → Time & language)."
-            );
-          }
-          if (msg.toLowerCase().includes("deactivated") || msg.toLowerCase().includes("domain")) {
-            await logout();
-          }
+        setProfile(null);
+        if (!isTokenSkewError(e)) {
+          setBootError(msg);
+        } else {
+          setBootError(
+            "Sign-in is syncing. Wait a moment and try again, or sync your PC clock (Settings → Time & language)."
+          );
+        }
+        if (msg.toLowerCase().includes("deactivated") || msg.toLowerCase().includes("domain")) {
+          await logout();
         }
       } finally {
-        if (!cancelled) setBooting(false);
+        if (active) setBooting(false);
       }
-    }
-    boot();
+    })();
+
     return () => {
-      cancelled = true;
+      active = false;
     };
-  }, [firebaseUser]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [firebaseUser?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading || booting) {
     return (

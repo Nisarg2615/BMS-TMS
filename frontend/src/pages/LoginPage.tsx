@@ -81,6 +81,7 @@ export default function LoginPage() {
           <p className="authFormSubtitle">Login using your school email</p>
 
           <Button
+            type="button"
             variant="outline-secondary"
             className="w-100 d-flex align-items-center justify-content-center gap-2 authGoogleBtn"
             disabled={busy}
@@ -132,6 +133,7 @@ export default function LoginPage() {
             {error ? <Alert variant="danger" className="py-2 small mb-3">{error}</Alert> : null}
 
             <Button
+              type="button"
               variant="primary"
               className="w-100 mb-3"
               disabled={busy}
