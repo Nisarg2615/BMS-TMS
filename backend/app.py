@@ -14,11 +14,6 @@ from firebase_admin import credentials, firestore
 STATUS_COLUMNS = ["Open", "In Progress", "On Hold", "Review", "Completed"]
 LEGACY_STATUS_MAP = {"To Do": "Open"}
 
-from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app, origins=["https://bms-tms.vercel.app"])
-
 
 def _normalize_status(status: Optional[str]) -> str:
     if not status:
@@ -184,7 +179,7 @@ def _dt_to_iso(dt: Optional[datetime]) -> Optional[str]:
 
 def create_app() -> Flask:
     app = Flask(__name__)
-    CORS(app)
+    CORS(app, origins=["https://bms-tms.vercel.app"])
 
     # -------- Firebase Admin init --------
     # One of these env vars should be configured:
