@@ -76,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signInWithGoogle: async () => {
         if (!auth) throw new Error("Firebase is not configured.");
         const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: "select_account" });
         await signInWithPopup(auth, provider);
         const u = auth.currentUser;
         if (u) {
@@ -89,12 +90,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const domain = u.email.split("@")[1]?.toLowerCase();
             if (!domain || !domains.includes(domain)) {
               await signOut(auth);
-              throw new Error(`Only school email domains are allowed (${domains.join(", ")}).`);
+              throw new Error(
+                `Signed in as ${u.email}, but only school email domains are allowed (${domains.join(", ")}).`
+              );
             }
-          }
-          if (!u.emailVerified) {
-            await signOut(auth);
-            throw new Error("Please verify your email before logging in.");
           }
         }
       },

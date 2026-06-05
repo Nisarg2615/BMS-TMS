@@ -38,7 +38,9 @@ def _check_email_domain_or_raise(email: Optional[str]) -> None:
         raise PermissionError("Invalid email address")
     domain = email_l.split("@", 1)[1]
     if domain not in domains:
-        raise PermissionError(f"Email domain not allowed. Use: {', '.join(domains)}")
+        raise PermissionError(
+            f"Email domain '{domain}' is not allowed for {email_l}. Use: {', '.join(domains)}"
+        )
 
 
 def _is_active_user(data: Dict[str, Any]) -> bool:
@@ -244,10 +246,32 @@ def _verify_user_from_token() -> Dict[str, Any]:
     return decoded
 
 
+def _resolve_auth_email(uid: str, decoded: Dict[str, Any]) -> Optional[str]:
+    email = (decoded.get("email") or "").strip().lower()
+    if email:
+        return email
+    try:
+        record = fb_auth.get_user(uid)
+        return (record.email or "").strip().lower() or None
+    except Exception:
+        return None
+
+
+def _find_prereg_user(email: Optional[str], uid: str) -> Tuple[Optional[Any], Optional[Dict[str, Any]]]:
+    email_l = (email or "").strip().lower()
+    if not email_l:
+        return None, None
+    for candidate in db.collection("users").where("email", "==", email_l).stream():
+        if candidate.id == uid:
+            continue
+        return candidate, candidate.to_dict() or {}
+    return None, None
+
+
 def _ensure_authenticated_user() -> Dict[str, Any]:
     decoded = _verify_user_from_token()
     g.firebase_uid = decoded.get("uid")
-    g.firebase_email = decoded.get("email")
+    g.firebase_email = _resolve_auth_email(g.firebase_uid, decoded)
     g.firebase_name = decoded.get("name") or ""
     g.firebase_picture = decoded.get("picture") or ""
     user_data = _get_or_create_user(g.firebase_uid, g.firebase_email, g.firebase_name)
@@ -295,15 +319,7 @@ def _get_or_create_user(uid: str, email: Optional[str], name: str) -> Dict[str, 
         return data
 
     email_l = (email or "").strip().lower()
-    prereg_snap = None
-    prereg_data = None
-    if email_l:
-        for candidate in db.collection("users").where("email", "==", email_l).stream():
-            if candidate.id == uid:
-                continue
-            prereg_snap = candidate
-            prereg_data = candidate.to_dict() or {}
-            break
+    prereg_snap, prereg_data = _find_prereg_user(email_l, uid)
 
     if prereg_data:
         if not _is_active_user(prereg_data):
