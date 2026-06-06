@@ -262,6 +262,7 @@ export default function DashboardPage({ profile }: { profile: UserProfile }) {
           await refreshTasks();
           bumpNotifications();
         }}
+        currentUserId={profile.uid}
         isAdmin={isAdmin}
         users={users.length ? users : [{ uid: profile.uid, name: profile.name, email: profile.email, department: profile.department, role: profile.role, active: true }]}
       />

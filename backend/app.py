@@ -60,6 +60,16 @@ def _can_access_task(uid: str, role: str, task_data: Dict[str, Any]) -> bool:
     return task_data.get("assigned_to") == uid or task_data.get("created_by") == uid
 
 
+def _can_delete_task(uid: str, task_data: Dict[str, Any]) -> bool:
+    return task_data.get("created_by") == uid
+
+
+def _can_reassign_task(uid: str, role: str, task_data: Dict[str, Any]) -> bool:
+    if role == "Admin":
+        return True
+    return task_data.get("created_by") == uid
+
+
 def _task_to_json(snap_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "id": snap_id,
@@ -360,6 +370,17 @@ def _user_display_name(data: Dict[str, Any]) -> str:
     if email and "@" in email:
         return email.split("@", 1)[0].replace(".", " ").title()
     return ""
+
+
+def _staff_display_name(uid: str) -> str:
+    if not uid:
+        return "Unknown"
+    snap = _user_doc(uid).get()
+    if snap.exists:
+        label = _user_display_name(snap.to_dict() or {})
+        if label:
+            return label
+    return uid
 
 
 def _user_public_dict(snap) -> Dict[str, Any]:
@@ -681,6 +702,7 @@ def create_task():
         "assigned_to": assigned_to,
         "department": department,
         "priority": priority,
+        "status": status,
         "created_at": now,
         "updated_at": now,
     }
@@ -797,6 +819,8 @@ def update_task(task_id: str):
             status_changed = True
 
     if "assigned_to" in payload:
+        if not _can_reassign_task(uid, role, data):
+            return jsonify({"error": "Only the task creator can reassign this task"}), 403
         new_assigned = (payload.get("assigned_to") or "").strip()
         if not new_assigned:
             return jsonify({"error": "assigned_to cannot be empty"}), 400
@@ -896,9 +920,24 @@ def delete_task(task_id: str):
     if data.get("is_system"):
         return jsonify({"error": "Forbidden"}), 403
 
-    role = _user_role(uid)
-    if not _can_access_task(uid, role, data):
-        return jsonify({"error": "Forbidden"}), 403
+    if not _can_delete_task(uid, data):
+        return jsonify({"error": "Only the task creator can delete this task"}), 403
+
+    assigned_to = (data.get("assigned_to") or "").strip()
+    title = (data.get("title") or "Task").strip()
+    if assigned_to and assigned_to != uid:
+        try:
+            deleter_name = (g.firebase_name or "").strip() or _actor_display_name(uid)
+            ts_key = int(_utc_now().timestamp() * 1000)
+            _create_notification(
+                assigned_to,
+                f"deleted-{task_id}-{ts_key}",
+                task_id,
+                "task_deleted",
+                f"Task '{title}' was deleted by {deleter_name}",
+            )
+        except Exception:
+            pass
 
     # Delete subcollections first.
     _delete_subcollection(snap.reference, "comments")
@@ -1130,7 +1169,11 @@ def admin_stats():
         dept_tasks[dept_name] = dept_tasks.get(dept_name, 0) + 1
 
     productivity = [
-        {"uid": u, "completed_tasks": c}
+        {
+            "uid": u,
+            "name": _staff_display_name(u),
+            "completed_tasks": c,
+        }
         for u, c in sorted(completed_by_user.items(), key=lambda x: x[1], reverse=True)
         if u
     ][:10]

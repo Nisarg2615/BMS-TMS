@@ -87,5 +87,5 @@ export type AdminStats = {
   users_total: number;
   users_active: number;
   department_breakdown?: Record<string, number>;
-  top_staff_productivity?: Array<{ uid: string; completed_tasks: number }>;
+  top_staff_productivity?: Array<{ uid: string; name?: string; completed_tasks: number }>;
 };

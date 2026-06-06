@@ -153,7 +153,7 @@ export default function AdminStatsPanel({
         {activity.length === 0 ? (
           <p className="text-muted small mb-3">No activity yet.</p>
         ) : (
-          <div className="table-responsive mb-3">
+          <div className="table-responsive adminActivityScroll">
             <Table size="sm" hover className="mb-0">
               <thead className="table-light">
                 <tr>
@@ -184,7 +184,7 @@ export default function AdminStatsPanel({
           <div>
             {(stats.top_staff_productivity || []).map((p) => (
               <div key={p.uid} className="historyItem mb-2">
-                <div className="fw-semibold small">{p.uid}</div>
+                <div className="fw-semibold small">{p.name || p.uid}</div>
                 <div className="text-muted small">Completed: {p.completed_tasks}</div>
               </div>
             ))}

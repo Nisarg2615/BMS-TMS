@@ -17,6 +17,7 @@ export default function TaskDetailModal({
   taskId,
   onClose,
   onTaskUpdated,
+  currentUserId,
   isAdmin,
   users,
 }: {
@@ -24,6 +25,7 @@ export default function TaskDetailModal({
   taskId: string | null;
   onClose: () => void;
   onTaskUpdated: () => Promise<void> | void;
+  currentUserId: string;
   isAdmin: boolean;
   users: StaffUser[];
 }) {
@@ -115,6 +117,8 @@ export default function TaskDetailModal({
   }
 
   const overdue = task ? isTaskOverdue(task) : false;
+  const canReassign = Boolean(task && (isAdmin || task.created_by === currentUserId));
+  const assignee = task ? users.find((u) => u.uid === task.assigned_to) : null;
 
   return (
     <Modal show={open && !!taskId} onHide={onClose} size="lg" centered scrollable>
@@ -170,14 +174,18 @@ export default function TaskDetailModal({
             <Row className="g-3 mb-3">
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label>Reassign To</Form.Label>
-                  <Form.Select value={String(task.assigned_to || "")} onChange={(e) => updateAssignment(e.target.value)}>
-                    {users.map((u) => (
-                      <option key={u.uid} value={u.uid}>
-                        {formatUserOption(u)}
-                      </option>
-                    ))}
-                  </Form.Select>
+                  <Form.Label>{canReassign ? "Reassign To" : "Assigned To"}</Form.Label>
+                  {canReassign ? (
+                    <Form.Select value={String(task.assigned_to || "")} onChange={(e) => updateAssignment(e.target.value)}>
+                      {users.map((u) => (
+                        <option key={u.uid} value={u.uid}>
+                          {formatUserOption(u)}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  ) : (
+                    <div className="fw-semibold">{assignee ? formatUserOption(assignee) : task.assigned_to || "—"}</div>
+                  )}
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -272,12 +280,11 @@ export default function TaskDetailModal({
             {busyClose ? "Closing..." : "Close Task"}
           </Button>
         ) : null}
-        {isAdmin ? (
+        {task && task.created_by === currentUserId ? (
           <Button
             variant="danger"
-            disabled={busyDelete || !task}
+            disabled={busyDelete}
             onClick={async () => {
-              if (!task) return;
               if (!window.confirm("Delete this task? This cannot be undone.")) return;
               setBusyDelete(true);
               setDeleteError(null);
