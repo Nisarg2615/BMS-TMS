@@ -43,7 +43,7 @@ const FEATURES = [
 ];
 
 export default function LoginPage({ onAttemptLogin }: { onAttemptLogin?: () => void }) {
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, authError } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +106,22 @@ export default function LoginPage({ onAttemptLogin }: { onAttemptLogin?: () => v
             <span>or use email</span>
           </div>
 
-          <Form>
+          <Form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (busy) return;
+              setBusy(true);
+              setError(null);
+              onAttemptLogin?.();
+              try {
+                await signIn(email.trim(), password);
+              } catch (err: any) {
+                setError(err?.message || "Login failed");
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
             <Form.Group className="mb-3" controlId="login-email">
               <Form.Label className="authLabel">School Email</Form.Label>
               <Form.Control
@@ -131,26 +146,13 @@ export default function LoginPage({ onAttemptLogin }: { onAttemptLogin?: () => v
               />
             </Form.Group>
 
-            {error ? <Alert variant="danger" className="py-2 small mb-3">{error}</Alert> : null}
+            {error || authError ? (
+              <Alert variant="danger" className="py-2 small mb-3">
+                {error || authError}
+              </Alert>
+            ) : null}
 
-            <Button
-              type="button"
-              variant="primary"
-              className="w-100 mb-3"
-              disabled={busy}
-              onClick={async () => {
-                setBusy(true);
-                setError(null);
-                onAttemptLogin?.();
-                try {
-                  await signIn(email.trim(), password);
-                } catch (e: any) {
-                  setError(e?.message || "Login failed");
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
+            <Button type="submit" variant="primary" className="w-100 mb-3" disabled={busy}>
               {busy ? "Signing in..." : "Login"}
             </Button>
           </Form>

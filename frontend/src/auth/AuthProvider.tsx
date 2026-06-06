@@ -16,6 +16,8 @@ type AuthContextValue = {
   firebaseUser: User | null;
   idToken: string | null;
   loading: boolean;
+  authError: string | null;
+  clearAuthError: () => void;
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -23,12 +25,35 @@ type AuthContextValue = {
   getFreshToken: () => Promise<string>;
 };
 
+function allowedDomains(): string[] {
+  const domainsRaw = (import.meta.env.VITE_ALLOWED_EMAIL_DOMAINS as string) || "";
+  return domainsRaw
+    .split(",")
+    .map((d) => d.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+async function validateSignedInUser(user: User): Promise<string | null> {
+  await user.reload();
+
+  const domains = allowedDomains();
+  if (domains.length && user.email) {
+    const domain = user.email.split("@")[1]?.toLowerCase();
+    if (!domain || !domains.includes(domain)) {
+      return `Signed in as ${user.email}, but only school email domains are allowed (${domains.join(", ")}).`;
+    }
+  }
+
+  return null;
+}
+
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [idToken, setIdToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!firebaseConfigured || !auth) {
@@ -36,13 +61,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     return onAuthStateChanged(auth, async (user) => {
-      setFirebaseUser(user);
-      if (user) {
-        const token = await user.getIdToken();
-        setIdToken(token);
-      } else {
+      if (!user) {
+        setFirebaseUser(null);
         setIdToken(null);
+        setLoading(false);
+        return;
       }
+
+      const validationError = await validateSignedInUser(user);
+      if (validationError) {
+        setAuthError(validationError);
+        await signOut(auth);
+        setFirebaseUser(null);
+        setIdToken(null);
+        setLoading(false);
+        return;
+      }
+
+      setAuthError(null);
+      setFirebaseUser(user);
+      const token = await user.getIdToken();
+      setIdToken(token);
       setLoading(false);
     });
   }, []);
@@ -52,6 +91,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       firebaseUser,
       idToken,
       loading,
+      authError,
+      clearAuthError: () => setAuthError(null),
       signUp: async (email, password) => {
         if (!auth) throw new Error("Firebase is not configured.");
         const cred = await createUserWithEmailAndPassword(auth, email, password);
@@ -63,39 +104,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       signIn: async (email, password) => {
         if (!auth) throw new Error("Firebase is not configured.");
+        setAuthError(null);
         await signInWithEmailAndPassword(auth, email, password);
-        const u = auth.currentUser;
-        if (u) {
-          await u.reload();
-          if (!u.emailVerified) {
-            await signOut(auth);
-            throw new Error("Please verify your email before logging in.");
-          }
-        }
       },
       signInWithGoogle: async () => {
         if (!auth) throw new Error("Firebase is not configured.");
+        setAuthError(null);
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: "select_account" });
         await signInWithPopup(auth, provider);
-        const u = auth.currentUser;
-        if (u) {
-          await u.reload();
-          const domainsRaw = (import.meta.env.VITE_ALLOWED_EMAIL_DOMAINS as string) || "";
-          const domains = domainsRaw
-            .split(",")
-            .map((d) => d.trim().toLowerCase())
-            .filter(Boolean);
-          if (domains.length && u.email) {
-            const domain = u.email.split("@")[1]?.toLowerCase();
-            if (!domain || !domains.includes(domain)) {
-              await signOut(auth);
-              throw new Error(
-                `Signed in as ${u.email}, but only school email domains are allowed (${domains.join(", ")}).`
-              );
-            }
-          }
-        }
       },
       logout: async () => {
         if (!auth) throw new Error("Firebase is not configured.");
@@ -111,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Not authenticated");
       },
     }),
-    [firebaseUser, idToken, loading]
+    [firebaseUser, idToken, loading, authError]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -77,7 +77,7 @@ function TopBar({
 }
 
 export default function App() {
-  const { firebaseUser, idToken, loading, getFreshToken, logout } = useAuth();
+  const { firebaseUser, idToken, loading, authError, clearAuthError, getFreshToken, logout } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [bootError, setBootError] = useState<string | null>(null);
   const [booting, setBooting] = useState(true);
@@ -144,12 +144,23 @@ export default function App() {
 
     return (
       <div className="authPage">
-        {bootError ? <Alert variant="danger" className="authBootError mb-3">{bootError}</Alert> : null}
+        {bootError || authError ? (
+          <Alert variant="danger" className="authBootError mb-3">
+            {bootError || authError}
+          </Alert>
+        ) : null}
         <Routes>
           <Route path="/signup" element={<SignupPage />} />
           <Route
             path="*"
-            element={<LoginPage onAttemptLogin={() => setBootError(null)} />}
+            element={
+              <LoginPage
+                onAttemptLogin={() => {
+                  setBootError(null);
+                  clearAuthError();
+                }}
+              />
+            }
           />
         </Routes>
       </div>
